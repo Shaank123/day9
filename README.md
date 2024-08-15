@@ -141,3 +141,118 @@ int main() {
 4. Enter keywords to search for within the indexed files.
 
 This simple search engine demonstrates how you can build more complex search functionalities and data indexing systems using C++.
+
+To post this project on GitHub, you'll want to structure it in a way that's clear and easy for others to understand. Here's how you can redesign the project with GitHub in mind, including a README file, directory structure, and well-commented code.
+
+### Project Structure
+```
+Mini-Search-Engine/
+├── src/
+│   └── main.cpp
+├── data/
+│   ├── file1.txt
+│   ├── file2.txt
+│   └── file3.txt
+├── README.md
+└── .gitignore
+```
+
+### `main.cpp`
+Place the main C++ code in the `src/` directory.
+
+```cpp
+// src/main.cpp
+
+#include <iostream>
+#include <fstream>
+#include <string>
+#include <map>
+#include <vector>
+#include <sstream>
+#include <algorithm>
+
+// Struct to store file name and frequency of keyword
+struct FileData {
+    std::string filename;
+    int frequency;
+};
+
+// Function to index the text files
+void indexFiles(const std::vector<std::string>& files, std::map<std::string, std::vector<FileData>>& index) {
+    for (const auto& file : files) {
+        std::ifstream infile("../data/" + file);
+        if (!infile) {
+            std::cerr << "Could not open file: " << file << std::endl;
+            continue;
+        }
+
+        std::string word;
+        std::map<std::string, int> wordCount;
+
+        while (infile >> word) {
+            // Convert to lowercase to make the search case-insensitive
+            std::transform(word.begin(), word.end(), word.begin(), ::tolower);
+            wordCount[word]++;
+        }
+
+        for (const auto& entry : wordCount) {
+            index[entry.first].push_back({file, entry.second});
+        }
+    }
+}
+
+// Function to search for a keyword in the index
+std::vector<FileData> searchKeyword(const std::string& keyword, const std::map<std::string, std::vector<FileData>>& index) {
+    std::string lowerKeyword = keyword;
+    std::transform(lowerKeyword.begin(), lowerKeyword.end(), lowerKeyword.begin(), ::tolower);
+
+    if (index.find(lowerKeyword) != index.end()) {
+        return index.at(lowerKeyword);
+    } else {
+        return {}; // Return an empty vector if the keyword is not found
+    }
+}
+
+// Function to display search results
+void displayResults(const std::vector<FileData>& results) {
+    if (results.empty()) {
+        std::cout << "No results found." << std::endl;
+        return;
+    }
+
+    // Sort the results by frequency in descending order
+    std::vector<FileData> sortedResults = results;
+    std::sort(sortedResults.begin(), sortedResults.end(), [](const FileData& a, const FileData& b) {
+        return b.frequency < a.frequency;
+    });
+
+    std::cout << "Search Results: " << std::endl;
+    for (const auto& result : sortedResults) {
+        std::cout << "File: " << result.filename << " | Frequency: " << result.frequency << std::endl;
+    }
+}
+
+int main() {
+    std::vector<std::string> files = {"file1.txt", "file2.txt", "file3.txt"};
+    std::map<std::string, std::vector<FileData>> index;
+
+    // Index the files
+    indexFiles(files, index);
+
+    std::string keyword;
+    while (true) {
+        std::cout << "Enter keyword to search (or type 'exit' to quit): ";
+        std::cin >> keyword;
+        if (keyword == "exit") {
+            break;
+        }
+
+        // Search for the keyword
+        std::vector<FileData> results = searchKeyword(keyword, index);
+
+        // Display the results
+        displayResults(results);
+    }
+
+    return 0;
+}
